@@ -99,6 +99,26 @@ router.post('/login', rateLimit, validateBody(loginSchema), async (req: Request,
       return res.status(401).json({ error: 'Unauthorized', message: 'Invalid email or password' });
     }
 
+    // CRITICAL FIX: Do NOT create session before MFA check.
+    // If MFA is enabled, require the challenge route to complete auth.
+    const mfaEnabled = user.mfa_verified === 1;
+    if (mfaEnabled) {
+      return res.json({
+        success: true,
+        message: 'MFA verification required',
+        mfa_required: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
+          is_admin: user.is_admin === 1,
+          email_verified: user.email_verified === 1,
+        },
+      });
+    }
+
     const token = createSession(user);
 
     res.cookie('session_token', token, {
@@ -108,11 +128,10 @@ router.post('/login', rateLimit, validateBody(loginSchema), async (req: Request,
       maxAge: config.security.tokenTtl * 1000,
     });
 
-    const mfaEnabled = user.mfa_verified === 1;
     res.json({
       success: true,
       message: 'Login successful',
-      mfa_required: mfaEnabled,
+      mfa_required: false,
       user: {
         id: user.id,
         email: user.email,
@@ -391,7 +410,11 @@ router.post('/google/callback', rateLimit, async (req: Request, res: Response) =
       return res.status(400).json({ error: 'Bad Request', message: 'Authorization code is required' });
     }
 
-    const response = await fetch('https://dsyjerhfuldpcoshaicl.supabase.co/auth/v1/token?grant_type=authorization_code', {
+    if (!config.supabase.url || !config.supabase.anonKey) {
+      return res.status(500).json({ error: 'Internal Server Error', message: 'Supabase not configured' });
+    }
+
+    const response = await fetch(`${config.supabase.url}/auth/v1/token?grant_type=authorization_code`, {
       method: 'POST',
       headers: {
         'apikey': config.supabase.anonKey,
@@ -405,7 +428,7 @@ router.post('/google/callback', rateLimit, async (req: Request, res: Response) =
       return res.status(400).json({ error: 'Bad Request', message: data.error?.message || 'Failed to exchange code' });
     }
 
-    const userResponse = await fetch('https://dsyjerhfuldpcoshaicl.supabase.co/auth/v1/user', {
+    const userResponse = await fetch(`${config.supabase.url}/auth/v1/user`, {
       headers: {
         'Authorization': `Bearer ${data.session.access_token}`,
         'apikey': config.supabase.anonKey,
@@ -432,6 +455,24 @@ router.post('/google/callback', rateLimit, async (req: Request, res: Response) =
       return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to create session' });
     }
 
+    // Hardened: verify Supabase session against access token, check MFA for existing users
+    if (sessionUser.mfa_verified === 1) {
+      return res.json({
+        success: true,
+        mfa_required: true,
+        message: 'MFA verification required',
+        user: {
+          id: sessionUser.id,
+          email: sessionUser.email,
+          first_name: sessionUser.first_name,
+          last_name: sessionUser.last_name,
+          phone: sessionUser.phone,
+          is_admin: sessionUser.is_admin === 1,
+          email_verified: sessionUser.email_verified === 1,
+        },
+      });
+    }
+
     const sessionToken = createSession(sessionUser);
 
     res.cookie('session_token', sessionToken, {
@@ -444,6 +485,7 @@ router.post('/google/callback', rateLimit, async (req: Request, res: Response) =
     res.json({
       success: true,
       message: 'Google sign-in successful',
+      mfa_required: false,
       user: {
         id: sessionUser.id,
         email: sessionUser.email,

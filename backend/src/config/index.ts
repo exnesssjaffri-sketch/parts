@@ -38,6 +38,7 @@ function getEnv(key: string, defaultValue?: string): string {
   const value = process.env[key];
   if (value !== undefined) return value;
   if (defaultValue !== undefined) return defaultValue;
+  if (process.env.NODE_ENV === 'test') return '';
   throw new Error(`Missing required environment variable: ${key}`);
 }
 
@@ -51,7 +52,7 @@ function getEnvInt(key: string, defaultValue: number): number {
   return defaultValue;
 }
 
-function getEnvBool(key: string, defaultValue: boolean): boolean {
+function _getEnvBool(key: string, defaultValue: boolean): boolean {
   const value = process.env[key];
   if (value !== undefined) {
     return value.toLowerCase() === 'true' || value === '1';

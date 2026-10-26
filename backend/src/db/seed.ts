@@ -492,7 +492,7 @@ export async function seedDatabase(): Promise<void> {
     persistSync();
     console.log('Database seeded successfully!');
   } catch (e) {
-    try { db.run('ROLLBACK'); } catch {}
+    try { db.run('ROLLBACK'); } catch (_) { /* no-op */ }
     throw e;
   }
 }

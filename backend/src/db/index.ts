@@ -106,10 +106,10 @@ export async function ensureDb(): Promise<SqlJsDatabase> {
       ensureDir(dbPath);
     }
 
-    try { db.run('PRAGMA foreign_keys = ON'); } catch {}
+    try { db.run('PRAGMA foreign_keys = ON'); } catch (_) { /* no-op */ }
     // Always use DELETE journal mode for reliable export-based persistence
-    try { db.run('PRAGMA journal_mode = DELETE'); } catch {}
-    try { db.run('PRAGMA busy_timeout = 5000'); } catch {}
+    try { db.run('PRAGMA journal_mode = DELETE'); } catch (_) { /* no-op */ }
+    try { db.run('PRAGMA busy_timeout = 5000'); } catch (_) { /* no-op */ }
 
     return db;
   })();
@@ -198,14 +198,14 @@ export function transaction<T>(fn: (db: SqlJsDatabase) => T): T {
     persist();
     return result;
   } catch (e) {
-    try { database.run('ROLLBACK'); } catch {}
+    try { database.run('ROLLBACK'); } catch (_) { /* no-op */ }
     throw e;
   }
 }
 
 export function seedIfEmpty(): void {
   const database = getDb();
-  let count = 0;
+  let count: number;
   try {
     const row = database.prepare('SELECT COUNT(*) as c FROM categories');
     row.step();
