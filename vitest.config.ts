@@ -11,6 +11,13 @@ export default defineConfig({
     include: ['backend/test/**/*.test.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
+    env: {
+      JWT_SECRET: 'test-jwt-secret-for-development-only-do-not-use-in-production-at-least-32-chars',
+      SESSION_SECRET: 'test-session-secret-for-development-only-do-not-use-in-production-32chars',
+      NODE_ENV: 'test',
+      SUPABASE_URL: 'https://dsyjerhfuldpcoshaicl.supabase.co',
+      SUPABASE_ANON_KEY: 'test-anon-key-placeholder',
+    },
   },
   resolve: {
     alias: {

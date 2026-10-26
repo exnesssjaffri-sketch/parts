@@ -24,7 +24,7 @@ export const AuthCallback: React.FC = () => {
 
         const data = await res.json();
 
-        if (res.ok && data.session_token) {
+        if (res.ok && data.success) {
           navigate('/');
           return;
         }

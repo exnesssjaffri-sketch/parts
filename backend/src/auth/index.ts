@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getDb, qRun, qGet } from '../db/index.js';
+import { qRun, qGet } from '../db/index.js';
 import { config } from '../config/index.js';
 import { TOTP, Secret } from 'otpauth';
 
