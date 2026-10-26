@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files (keep .env.example as the safe template)
+.env
+.env.local
+.env.*.local
+.env.*
+!.env.example
+
+# Database and sidecar files
+*.db
+*.sqlite
+*.sqlite3
+backend/*.db
+*.db-wal
+*.db-shm
+*.db-journal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+
+# Misc
+*.tgz
+.cache/
+
+# Cookie/session exports
+cookies*.txt
+**/cookies*.txt
+
+# Supabase CLI local cache (project ref, pooler URL)
+supabase/.temp/
+
+# Local-only dev scripts (hardcoded machine paths)
+run_server.ps1
+kill_and_run.ps1
+
+# Local Claude Code settings
+.claude/settings.local.json

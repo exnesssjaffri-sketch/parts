@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #fafafa;
+    color: #1c1917;
+    -webkit-font-smoothing: antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1.5rem;
+    background-color: #c53030;
+    color: #ffffff;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+    outline: none;
+  }
+  .btn-primary:hover {
+    background-color: #9b2c2c;
+  }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1.5rem;
+    background-color: #1c1917;
+    color: #ffffff;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+    outline: none;
+  }
+  .btn-secondary:hover {
+    background-color: #0c0a09;
+  }
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1.5rem;
+    border: 2px solid #1c1917;
+    color: #1c1917;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover {
+    background-color: #1c1917;
+    color: #ffffff;
+  }
+  .card {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+    border: 1px solid #e5e5e5;
+    overflow: hidden;
+  }
+  .input {
+    width: 100%;
+    padding: 1rem 1rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    outline: none;
+  }
+  .input:focus {
+    box-shadow: 0 0 0 2px rgba(197,48,48,0.2);
+    border-color: transparent;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+}
