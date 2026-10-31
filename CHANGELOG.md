@@ -2,6 +2,26 @@
 
 All notable changes to AutoMarts are documented in this file.
 
+## [Unreleased] - 2026-10-31
+
+### Added
+- HTTP-level MFA regression test suite (`backend/test/auth-http-mfa.test.ts`) — 12 scenarios covering normal login, MFA challenge flow, token expiry, single-use enforcement, cross-user attack prevention, OAuth MFA, and logout invalidation
+- `consumeChallengeTokenForUser()` in `backend/src/auth/index.ts` — user-bound challenge token consumption (SEC-11)
+- `__debugExpireChallengeToken()` test-only helper for deterministic challenge token expiry testing
+- Google OAuth MFA enforcement — `/google/callback` returns `challenge_token` for MFA-enabled users instead of issuing a session directly (SEC-12)
+- Supabase migration 003 (`supabase/migrations/003_rls_security.sql`) — enables RLS on 10 tables with deny-all policies for anon/authenticated roles, removes `rls_auto_enable()` SECURITY DEFINER, adds missing indexes, handles `schema_version` dead lock. **Corrected**: original migration recorded version 3 but never actually enabled RLS or created policies. Revised migration uses explicit `USING (false)` deny policies instead of broken `auth.uid()::text = id::text` identity mapping (BIGINT vs UUID mismatch). See SEC-14 below.
+
+### Fixed
+- **SEC-11**: Challenge token not bound to user — cross-user token replay attack vector closed
+- **SEC-12**: Google OAuth bypassed MFA — now follows same challenge token flow as password login
+- Test infrastructure: `backend/src/index.ts` — wrapped `startServer()` in `process.argv[1]` check so importing the app for tests no longer binds port 8000
+- `backend/src/routes/auth.ts` — added missing `consumeChallengeTokenForUser` import (was causing 500 errors in /mfa/challenge)
+
+### Test Results
+- **68/68 tests passing** (up from 50/50)
+- Backend TypeScript: clean (`tsc --noEmit`, 0 errors)
+- Frontend build: PASS (2029 modules, 34.5s)
+
 ## [Unreleased] - 2026-10-30
 
 ### Added

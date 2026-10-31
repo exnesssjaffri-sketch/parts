@@ -10,7 +10,7 @@
 | `backend/test/transaction-rollback.test.ts` | 3 | PASS |
 | `backend/test/sanitize-html.test.ts` | 11 | PASS |
 | `backend/test/auth-http-mfa.test.ts` | 12 | PASS |
-| **Total** | **62** | **ALL PASS** |
+| **Total** | **68** | **ALL PASS** |
 
 ## Run Command
 
@@ -87,8 +87,22 @@ the real Google OAuth callback endpoint (mocked only for external token exchange
 |-------|--------|
 | Backend TypeScript (`tsc --noEmit`) | PASS — 0 errors |
 | Frontend build (`vite build` in `frontend/`) | PASS — 2029 modules, ~16s |
-| Test suite (`vitest run`) | PASS — 62/62 |
+| Test suite (`vitest run`) | PASS — 68/68 |
 | Secret scan (`.env`, `.env.example`, source, migrations) | PASS — no real credentials found |
+
+### Supabase RLS Security Regression (SQL Audit)
+Migration 003 (`supabase/migrations/003_rls_security.sql`) was validated against migrations 001+002 with a Python-based SQL analysis script. Key checks performed:
+
+| Check | Result |
+|-------|--------|
+| All 10 tables referenced in ALTER TABLE exist in migration 001 schema | PASS |
+| All DROP POLICY / CREATE POLICY table references valid | PASS |
+| All CREATE INDEX foreign key columns exist in migration 001 | PASS |
+| No SECURITY DEFINER in executable SQL (replaced with SECURITY INVOKER stub) | PASS |
+| No permissive `USING (true)` / `WITH CHECK (true)` policies | PASS |
+| No `auth.uid()` in executable SQL (only appears in documentation comments) | PASS |
+
+**Note**: Full RLS policy enforcement tests require a live PostgreSQL instance with RLS enabled and are blocked until migration 003 is applied to the Supabase project. A `supabase_auth_id UUID` column must be added to `users` before per-user RLS policies can function.
 
 ## New Tests & Fixes Added This Session
 

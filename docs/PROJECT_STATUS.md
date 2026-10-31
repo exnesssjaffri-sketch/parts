@@ -32,7 +32,7 @@
 ### Build Status
 - Backend TypeScript (`tsc --noEmit`): PASS — 0 errors
 - Frontend (`vite build` from `frontend/`): PASS — 2029 modules
-- Tests (`vitest run`): **PASS — 62/62** (12 new HTTP-level MFA regression tests)
+- Tests (`vitest run`): **PASS — 68/68** (12 new HTTP-level MFA regression tests + SQL migration validation)
 
 ### Test Suite Composition
 - `backend/test/auth.test.ts` — 20 (unit, in-process)
@@ -44,8 +44,9 @@
 
 ### Supabase RLS Status
 - Migration 003 (`supabase/migrations/003_rls_security.sql`) **written but NOT applied** (read-only audit scope).
-- Live DB state: 10 public tables have RLS **disabled**; 1 (`schema_version`) enabled with no policy; 1 `SECURITY DEFINER` function (`rls_auto_enable`) callable by anon/authenticated.
-- **Migration 003 handles all three** — see [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for exact SQL.
+- **Corrected migration** (v2): enables RLS on all 10 sensitive tables with explicit `USING (false) WITH CHECK (false)` deny-all policies for anon/authenticated roles. Removes broken `auth.uid()::text = id::text` pattern (BIGINT vs UUID mismatch). Replaces SECURITY DEFINER helper with SECURITY INVOKER stub.
+- Live DB state (confirmed via Supabase advisors): 10 public tables have RLS **disabled**; `rls_auto_enable()` still exists as SECURITY DEFINER callable by anon/authenticated.
+- **Identity mapping gap**: No `supabase_auth_id UUID` column on `users` table — per-user RLS cannot work until this is added and populated during registration/OAuth flows. Until then, all sensitive tables use deny-all policies; backend continues working via service-role.
 - **Blocker**: migration must be run manually in the Supabase SQL editor before any direct PostgREST exposure.
 
 ### MFA Challenge Store — Deployment Compatibility
@@ -70,5 +71,6 @@
 1. **Apply migration 003** in Supabase SQL editor (10-table RLS enablement + policies). See `supabase/migrations/003_rls_security.sql`.
 2. Set production secrets (`JWT_SECRET`, `SESSION_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`).
 3. Configure CORS for production domain (restrict `ALLOWED_ORIGINS`).
-4. Revoke EXECUTE on `rls_auto_enable()` (migration 003 handles this).
+4. Add `supabase_auth_id UUID REFERENCES auth.users(id)` to the `users` table before enabling per-user RLS policies (documented in migration 003 comments and SECURITY_AUDIT.md).
+5. Revoke EXECUTE on `rls_auto_enable()` (migration 003 handles this).
 5. Decide on MFA challenge store persistence if multi-instance/serverless deployment is planned.

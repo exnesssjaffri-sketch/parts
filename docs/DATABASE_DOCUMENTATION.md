@@ -8,7 +8,10 @@ Embedded SQLite via sql.js (WASM), running in WAL mode with periodic `PRAGMA syn
 
 Current schema version: **2**
 
-Migration 001 (initial) created all tables. Migration 002 added the `schema_version` table and audit_logs infrastructure. Migration 003 (pending) adds RLS-compatible triggers for Supabase migration.
+Migration 001 (initial) created all tables. Migration 002 added RLS policies (uses broken `auth.uid()::text = id::text` identity mapping — BIGINT vs UUID mismatch). Migration 003 (pending manual application) enables RLS on 10 sensitive tables with deny-all policies for anon/authenticated roles, removes the SECURITY DEFINER helper, and adds missing indexes.
+
+### Supabase Identity Mapping Gap
+The application's `users` table uses BIGSERIAL IDs while Supabase Auth assigns UUIDs. No column links the two. Until a `supabase_auth_id UUID` column is added to `users` and populated during registration/OAuth flows, per-user RLS policies cannot work. Migration 003 uses explicit deny-all policies (`USING (false) WITH CHECK (false)`) as a safe default until proper identity mapping is implemented.
 
 ## Tables
 

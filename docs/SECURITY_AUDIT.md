@@ -92,6 +92,17 @@ This audit assessed the security posture of the AutoMarts auto-parts e-commerce 
 - **Details:** 10 public tables (users, addresses, cart_items, orders, order_items, order_status_history, coupons, coupon_usage, audit_logs, wishlist_items) have RLS disabled, exposing them to the anon/authenticated roles via PostgREST. Additionally, `schema_version` has RLS enabled but no policies (dead lock). The `rls_auto_enable()` SECURITY DEFINER function is callable by anon/authenticated roles.
 - **Remediation:** `supabase/migrations/003_rls_security.sql` — applies to live project manually via Supabase SQL editor. NOT executed by the CI or backend.
 
+### SEC-14: Migration 003 Incorrectly Recorded (CORRECTED)
+- **Status:** FIXED IN MIGRATION FILE (not yet applied to live DB)
+- **Root cause:** The original migration 003 wrote `INSERT INTO schema_version (version) VALUES (3)` but the SQL session ended before the statements took effect (or was rolled back). The live database shows `schema_version.version = 1` but the GitHub branch contains the file — creating confusion about whether RLS was applied.
+- **Supabase Security Advisor confirmed:** All 10 sensitive tables still show `rowsecurity: false` on the live project.
+- **Additional fixes in revised migration:**
+  1. Replaced broken `auth.uid()::text = id::text` pattern from migration 002 (compares UUID string to BIGINT text — never matches) with explicit deny-all policies (`USING (false) WITH CHECK (false)`) for anon/authenticated roles.
+  2. Removed `SECURITY DEFINER` from the helper function — replaced with `SECURITY INVOKER` stub that raises an exception if called.
+  3. Added comprehensive identity mapping documentation explaining that `supabase_auth_id UUID` column must be added to `users` before any real per-user RLS policies can work.
+  4. Service-role bypasses RLS entirely — backend continues working without changes.
+- **Files changed:** `supabase/migrations/003_rls_security.sql` (full rewrite)
+
 ---
 
 ## Defense in Depth
@@ -120,7 +131,9 @@ The Supabase project was scanned and the following issues were identified:
 - **`rls_auto_enable()` SECURITY DEFINER function** callable by `anon` and `authenticated` roles. Should revoke EXECUTE or switch to SECURITY INVOKER.
 
 ### Security (INFO)
-- **`schema_version` table has RLS enabled but no policies** — dead policy, should be removed.
+- **`schema_version` table has RLS enabled but no policies** — dead lock, should be restricted.
+- **Migration 003 recorded but not applied**: Version 3 was written to `schema_version` but the RLS statements did not execute against the live database. Migration file has been rewritten with explicit deny-all policies.
+- **Broken identity mapping**: Migration 002 policies use `auth.uid()::text = users.id::text` — this compares a UUID string to a BIGSERIAL bigint converted to text, which never matches. A `supabase_auth_id UUID` column must be added to `users` before per-user RLS can work.
 
 ### Performance (WARN)
 - **5 unindexed foreign keys** — minor impact at current scale.
@@ -131,8 +144,8 @@ The Supabase project was scanned and the following issues were identified:
 
 ## Recommendations
 
-1. **Apply Migration 003** in Supabase to enable RLS on all tables and set appropriate policies before any direct database exposure.
-2. **Revoke EXECUTE** on `rls_auto_enable()` or switch to SECURITY INVOKER.
+1. **Apply corrected Migration 003** in Supabase to enable RLS with deny-all policies on all sensitive tables and revoke EXECUTE on the old `rls_auto_enable()` function. See `supabase/migrations/003_rls_security.sql`.
+2. **Add identity mapping column**: `ALTER TABLE users ADD COLUMN supabase_auth_id UUID REFERENCES auth.users(id);` before enabling per-user RLS policies. Update registration/OAuth flows to populate this column.
 3. **Add `sanitizeHtml()` calls** in route handlers that echo user-generated content (product descriptions, review text) to close the dead-code gap.
 4. **Restrict CORS** to the production frontend domain.
 5. **Set up monitoring** on the audit_logs table for anomalous patterns.
