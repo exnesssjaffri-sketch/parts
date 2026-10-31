@@ -10,7 +10,6 @@ import type {
   CartSummary,
   User,
   Order,
-  Coupon,
   DashboardStats,
   ApiError,
 } from '../types';
@@ -66,11 +65,11 @@ export const api = {
   getVehicleMakes: () =>
     request<{ makes: VehicleMake[] }>('/products/vehicles/makes'),
 
-  getVehicleModels: (makeSlug: string) =>
-    request<{ models: VehicleModel[] }>(`/products/vehicles/models?make=${makeSlug}`),
+  getVehicleModels: (makeId: number) =>
+    request<{ models: VehicleModel[] }>(`/products/vehicles/make/${makeId}/models`),
 
-  getVehicleVariants: (modelSlug: string) =>
-    request<{ variants: VehicleVariant[] }>(`/products/vehicles/variants?model=${modelSlug}`),
+  getVehicleVariants: (modelId: number) =>
+    request<{ variants: VehicleVariant[] }>(`/products/vehicles/model/${modelId}/variants`),
 
   getCompatibleProducts: (variantId: number) =>
     request<Product[]>(`/products/vehicles/compatible-products?variant_id=${variantId}`),
@@ -134,8 +133,13 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ code }),
     }),
-  challengeMFA: (data: { email: string; password: string; code: string }) =>
+  challengeMFA: (data: { email: string; password: string; code: string; challenge_token?: string }) =>
     request<{ success: boolean; message: string; user: User; mfa_required?: boolean }>('/auth/mfa/challenge', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  challengeOAuthMFA: (data: { code: string; challenge_token: string }) =>
+    request<{ success: boolean; message: string; user: User }>('/auth/mfa/oauth-challenge', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

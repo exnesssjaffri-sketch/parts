@@ -742,7 +742,7 @@ router.put('/orders/:id/status', validateParams(z.object({ id: z.string().regex(
     const session = (req as any).session;
     const now = new Date().toISOString();
 
-    transaction(() => {
+    transaction((db) => {
       const updates: string[] = ['status = ?', 'updated_at = datetime("now")'];
       const values: any[] = [status];
 
@@ -752,17 +752,16 @@ router.put('/orders/:id/status', validateParams(z.object({ id: z.string().regex(
       if (status === 'cancelled') { updates.push('cancelled_at = ?'); values.push(now); }
 
       values.push(id);
-      qRun(`UPDATE orders SET ${updates.join(', ')} WHERE id = ?`, [...values]);
+      prepare(`UPDATE orders SET ${updates.join(', ')} WHERE id = ?`, db).run(...values);
 
-      prepare('INSERT INTO order_status_history (order_id, status, notes, changed_by) VALUES (?, ?, ?, ?)')
+      prepare('INSERT INTO order_status_history (order_id, status, notes, changed_by) VALUES (?, ?, ?, ?)', db)
         .run(id, status, notes || null, session.userId);
 
       // Restore stock if cancelled
       if (status === 'cancelled' && currentStatus !== 'cancelled') {
-        const items = qAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [id]) as { product_id: number; quantity: number }[];
+        const items = prepare('SELECT product_id, quantity FROM order_items WHERE order_id = ?', db).all(id) as { product_id: number; quantity: number }[];
         for (const item of items) {
-          prepare('UPDATE products SET stock_quantity = stock_quantity + ?, updated_at = datetime("now") WHERE id = ?')
-            .run(item.quantity, item.product_id);
+          prepare('UPDATE products SET stock_quantity = stock_quantity + ?, updated_at = datetime("now") WHERE id = ?', db).run(item.quantity, item.product_id);
         }
       }
     });

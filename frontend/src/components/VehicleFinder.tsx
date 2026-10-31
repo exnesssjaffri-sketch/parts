@@ -8,8 +8,8 @@ export const VehicleFinder: React.FC = () => {
   const [makes, setMakes] = useState<VehicleMake[]>([]);
   const [models, setModels] = useState<VehicleModel[]>([]);
   const [variants, setVariants] = useState<VehicleVariant[]>([]);
-  const [selectedMake, setSelectedMake] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedMakeId, setSelectedMakeId] = useState<number | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -17,25 +17,25 @@ export const VehicleFinder: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedMake) {
+    if (selectedMakeId) {
       setLoading(true);
-      api.getVehicleModels(selectedMake).then((res) => {
+      api.getVehicleModels(selectedMakeId).then((res) => {
         setModels(res.models);
-        setSelectedModel('');
+        setSelectedModelId(null);
         setVariants([]);
         setLoading(false);
       });
     } else {
       setModels([]);
       setVariants([]);
-      setSelectedModel('');
+      setSelectedModelId(null);
     }
-  }, [selectedMake]);
+  }, [selectedMakeId]);
 
   useEffect(() => {
-    if (selectedModel) {
+    if (selectedModelId) {
       setLoading(true);
-      api.getVehicleVariants(selectedModel).then((res) => {
+      api.getVehicleVariants(selectedModelId).then((res) => {
         setVariants(res.variants);
         setLoading(false);
       });
@@ -43,12 +43,10 @@ export const VehicleFinder: React.FC = () => {
       setVariants([]);
       setLoading(false);
     }
-  }, [selectedModel]);
+  }, [selectedModelId]);
 
   const handleSelectVariant = (variantId: number) => {
     if (user) {
-      // Redirect to compatible products for this variant
-      // In a real app, we might have a dedicated page for this
       console.log('View compatible products for variant:', variantId);
     }
   };
@@ -68,27 +66,27 @@ export const VehicleFinder: React.FC = () => {
     <div className="relative inline-block">
       <div className="flex space-x-2">
         <select
-          value={selectedMake}
-          onChange={(e) => setSelectedMake(e.target.value)}
+          value={selectedMakeId ?? ''}
+          onChange={(e) => setSelectedMakeId(e.target.value ? Number(e.target.value) : null)}
           className="min-w-[80px] px-2 py-1 border border-neutral-border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-automotive-red"
         >
           <option value="">All Makes</option>
           {makes.map((make) => (
-            <option key={make.id} value={make.slug}>
+            <option key={make.id} value={make.id}>
               {make.name}
             </option>
           ))}
         </select>
 
         <select
-          value={selectedModel}
-          onChange={(e) => setSelectedModel(e.target.value)}
-          disabled={!selectedMake}
+          value={selectedModelId ?? ''}
+          onChange={(e) => setSelectedModelId(e.target.value ? Number(e.target.value) : null)}
+          disabled={!selectedMakeId}
           className="min-w-[80px] px-2 py-1 border border-neutral-border focus:outline-none focus:ring-2 focus:ring-automotive-red"
         >
           <option value="">All Models</option>
           {models.map((model) => (
-            <option key={model.id} value={model.slug}>
+            <option key={model.id} value={model.id}>
               {model.name}
             </option>
           ))}
@@ -96,15 +94,15 @@ export const VehicleFinder: React.FC = () => {
 
         <select
           onChange={(e) => {
-            const variant = variants.find((v) => v.slug === e.target.value);
+            const variant = variants.find((v) => v.id === Number(e.target.value));
             if (variant) handleSelectVariant(variant.id);
           }}
-          disabled={!selectedModel || variants.length === 0}
+          disabled={!selectedModelId || variants.length === 0}
           className="min-w-[80px] px-2 py-1 border border-neutral-border rounded-r-lg focus:outline-none focus:ring-2 focus:ring-automotive-red"
         >
           <option value="">All Variants</option>
           {variants.map((variant) => (
-            <option key={variant.id} value={variant.slug}>
+            <option key={variant.id} value={variant.id}>
               {variant.year} {variant.model_name} {variant.engine || ''}
             </option>
           ))}

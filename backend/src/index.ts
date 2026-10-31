@@ -96,6 +96,13 @@ async function startServer() {
   }
 }
 
-startServer();
+// Only start the HTTP server when this file is the process entry point.
+// When imported (e.g. by the test suite) the Express app is exported without
+// binding a listening socket, so tests can mount it on an ephemeral port.
+const isMainModule = process.argv[1] &&
+  (process.argv[1].endsWith('index.ts') || process.argv[1].endsWith('index.js'));
+if (isMainModule) {
+  startServer();
+}
 
 export { app };

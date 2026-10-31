@@ -1,12 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+// This repository keeps the Vite app under /frontend while npm build runs
+// from the repository root on Vercel.
+const frontendRoot = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
+  root: frontendRoot,
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': resolve(frontendRoot, 'src'),
     },
   },
   server: {
@@ -19,10 +25,11 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
-    sourcemap: true,
+    outDir: resolve(frontendRoot, 'dist'),
+    emptyOutDir: true,
+    sourcemap: false,
     rollupOptions: {
-      input: path.resolve(__dirname, 'index.html'),
+      input: resolve(frontendRoot, 'index.html'),
     },
   },
 })

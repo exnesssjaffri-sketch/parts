@@ -22,9 +22,101 @@ export interface SessionData {
   email: string;
   isAdmin: boolean;
   expiresAt: number;
+  mfaPending?: boolean;
 }
 
 const sessions = new Map<string, SessionData>();
+
+// Dedicated challenge token store — separate from sessions with independent TTL
+interface ChallengeRecord {
+  userId: number;
+  createdAt: number;
+  expiresAt: number;
+  attempts: number;
+  maxAttempts: number;
+}
+const CHALLENGE_TTL_MS = 120_000; // 2 minutes
+const CHALLENGE_MAX_ATTEMPTS = 5;
+const challenges = new Map<string, ChallengeRecord>();
+
+export function generateChallengeToken(userId: number): string {
+  const token = generateToken();
+  const now = Date.now();
+  challenges.set(token, {
+    userId,
+    createdAt: now,
+    expiresAt: now + CHALLENGE_TTL_MS,
+    attempts: 0,
+    maxAttempts: CHALLENGE_MAX_ATTEMPTS,
+  });
+  return token;
+}
+
+/** Read the user bound to a live challenge token; never accept identity from the client. */
+export function getChallengeTokenUserId(token: string): number | null {
+  const record = challenges.get(token);
+  if (!record) return null;
+  if (record.expiresAt < Date.now() || record.attempts >= record.maxAttempts) {
+    challenges.delete(token);
+    return null;
+  }
+  return record.userId;
+}
+
+/** Count a failed TOTP attempt and invalidate the challenge at the configured limit. */
+export function recordChallengeAttempt(token: string): boolean {
+  const record = challenges.get(token);
+  if (!record || record.expiresAt < Date.now()) {
+    challenges.delete(token);
+    return false;
+  }
+  record.attempts += 1;
+  if (record.attempts >= record.maxAttempts) challenges.delete(token);
+  return true;
+}
+
+export function consumeChallengeToken(token: string): boolean {
+  const record = challenges.get(token);
+  if (!record) return false;
+  if (record.expiresAt < Date.now()) {
+    challenges.delete(token);
+    return false;
+  }
+  if (record.attempts >= record.maxAttempts) {
+    challenges.delete(token);
+    return false;
+  }
+  challenges.delete(token);
+  return true;
+}
+
+/**
+ * Validate and atomically consume a challenge token, binding it to the
+ * authenticating user. A token issued for a different user must never be
+ * usable to complete another user's MFA flow.
+ */
+export function consumeChallengeTokenForUser(token: string, userId: number): boolean {
+  const record = challenges.get(token);
+  if (!record) return false;
+  if (record.expiresAt < Date.now()) {
+    challenges.delete(token);
+    return false;
+  }
+  if (record.attempts >= record.maxAttempts) {
+    challenges.delete(token);
+    return false;
+  }
+  if (record.userId !== userId) {
+    // Don't consume — let the attacker try again, but count the attempt
+    record.attempts++;
+    if (record.attempts >= record.maxAttempts) {
+      challenges.delete(token);
+    }
+    return false;
+  }
+  challenges.delete(token);
+  return true;
+}
 
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -43,7 +135,7 @@ export function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-export function createSession(user: User): string {
+export function createSession(user: User, options?: { mfaPending?: boolean }): string {
   const token = generateToken();
   const expiresAt = Date.now() + config.security.tokenTtl * 1000;
   sessions.set(token, {
@@ -51,6 +143,7 @@ export function createSession(user: User): string {
     email: user.email,
     isAdmin: user.is_admin === 1,
     expiresAt,
+    mfaPending: options?.mfaPending ?? false,
   });
   return token;
 }
@@ -181,4 +274,17 @@ export function disableMFA(userId: number, code: string): boolean {
 export function requireMFAForAction(userId: number): boolean {
   const user = qGet('SELECT mfa_verified FROM users WHERE id = ?', [userId]) as { mfa_verified: number } | null;
   return user !== null && user.mfa_verified === 1;
+}
+
+/**
+ * Test-only helper that forces an existing challenge token to be expired.
+ * This is a process-local debug escape hatch for the in-memory challenge
+ * store; it is not exposed over any network path and does not weaken the
+ * single-use/expiry guarantees enforced by consumeChallengeTokenForUser.
+ */
+export function __debugExpireChallengeToken(token: string): boolean {
+  const record = challenges.get(token);
+  if (!record) return false;
+  record.expiresAt = Date.now() - 1000;
+  return true;
 }
