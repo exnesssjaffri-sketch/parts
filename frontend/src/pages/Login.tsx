@@ -6,19 +6,16 @@ export const Login: React.FC = () => {
   const { login, signInWithGoogle, mfaRequired } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Redirect to MFA challenge when required
   React.useEffect(() => {
     if (mfaRequired) {
-      navigate('/mfa/login', { 
-        state: { email, password },
-        replace: true 
-      });
+      navigate("/mfa/login", { state: { email, password }, replace: true });
     }
-  }, [mfaRequired]);
-  const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  }, [mfaRequired, navigate, email, password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

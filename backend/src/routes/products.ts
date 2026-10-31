@@ -598,21 +598,33 @@ router.get('/vehicles/makes/:makeSlug/models', async (req: Request, res: Respons
   }
 });
 
-router.get('/vehicles/models/:modelSlug/variants', async (req: Request, res: Response) => {
+router.get('/vehicles/model/:modelId/variants', async (req: Request, res: Response) => {
   try {
-    const { modelSlug } = req.params;
+    const { modelId } = req.params;
 
-    const model = qGet('SELECT id FROM vehicle_models WHERE slug = ? AND is_active = 1', [modelSlug]);
+    const model = qGet(`
+      SELECT vm.id, vm.model_id, vm.year, vm.engine, vm.transmission, vm.fuel_type, vm.body_type,
+             vmm.name as model_name, vmm.slug as model_slug,
+             vmk.name as make_name, vmk.slug as make_slug
+      FROM vehicle_variants vm
+      JOIN vehicle_models vmm ON vm.model_id = vmm.id
+      JOIN vehicle_makes vmk ON vmm.make_id = vmk.id
+      WHERE vm.id = ? AND vm.is_active = 1
+    `, [modelId]) as any;
     if (!model) {
       return res.status(404).json({ error: 'Not Found', message: 'Vehicle model not found' });
     }
 
     const variants = qAll(`
-      SELECT id, year, engine, transmission, fuel_type, body_type
-      FROM vehicle_variants
-      WHERE model_id = ? AND is_active = 1
-      ORDER BY year DESC
-    `, [(model as any).id]);
+      SELECT vm.id, vm.model_id, vm.year, vm.engine, vm.transmission, vm.fuel_type, vm.body_type,
+             vmm.name as model_name, vmm.slug as model_slug,
+             vmk.name as make_name, vmk.slug as make_slug
+      FROM vehicle_variants vm
+      JOIN vehicle_models vmm ON vm.model_id = vmm.id
+      JOIN vehicle_makes vmk ON vmm.make_id = vmk.id
+      WHERE vm.model_id = ? AND vm.is_active = 1
+      ORDER BY vm.year DESC
+    `, [modelId]);
 
     res.json({ variants });
   } catch (error) {

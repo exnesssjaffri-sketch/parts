@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { qRun, ensureDb, getDb } from '../src/db/index.js';
 import { initDatabase } from '../src/db/init.js';
 import { config } from '../src/config/index.js';
-import { createUser, hashPassword, verifyPassword, getUserByEmail, getUserById, createSession, getSession, deleteSession, generateMFASecret, generateMFAQRCodeURI, verifyMFACode } from '../src/auth/index.js';
+import { createUser, hashPassword, verifyPassword, getUserByEmail, getUserById, createSession, getSession, deleteSession, generateMFASecret, generateMFAQRCodeURI, verifyMFACode, generateChallengeToken, consumeChallengeToken } from '../src/auth/index.js';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -147,5 +147,62 @@ describe('Auth Module - MFA Functions', () => {
   it('verifyMFACode should reject invalid code', () => {
     const secret = generateMFASecret();
     expect(verifyMFACode(secret, '000000')).toBe(false);
+  });
+});
+
+describe('Auth Module - MFA Challenge Flow', () => {
+  it('createSession with mfaPending flag should persist the flag', () => {
+    const user = { id: 10, email: 'mfa-test@example.com', is_admin: 0 } as any;
+    const token = createSession(user, { mfaPending: true });
+    const session = getSession(token);
+    expect(session).toBeDefined();
+    expect(session?.mfaPending).toBe(true);
+    expect(session?.userId).toBe(10);
+  });
+
+  it('getSession should not have mfaPending flag for normal session', () => {
+    const user = { id: 11, email: 'normal@example.com', is_admin: 0 } as any;
+    const token = createSession(user);
+    const session = getSession(token);
+    expect(session?.mfaPending).toBe(false);
+  });
+
+  it('non-MFA user login should not require MFA challenge', () => {
+    const user = { id: 12, email: 'nomfa@example.com', is_admin: 0, mfa_verified: 0 } as any;
+    const token = createSession(user);
+    const session = getSession(token);
+    expect(session?.mfaPending).toBe(false);
+    expect(session?.userId).toBe(12);
+  });
+});
+
+describe('Auth Module - Challenge Token Store', () => {
+  it('generateChallengeToken should create a unique token', () => {
+    const token1 = generateChallengeToken(42);
+    const token2 = generateChallengeToken(42);
+    expect(token1).toBeDefined();
+    expect(token2).toBeDefined();
+    expect(token1).not.toBe(token2);
+  });
+
+  it('consumeChallengeToken should succeed for valid token', () => {
+    const token = generateChallengeToken(99);
+    expect(consumeChallengeToken(token)).toBe(true);
+  });
+
+  it('consumeChallengeToken should fail for invalid token', () => {
+    expect(consumeChallengeToken('nonexistent-token')).toBe(false);
+  });
+
+  it('consumeChallengeToken should fail for already consumed token', () => {
+    const token = generateChallengeToken(77);
+    expect(consumeChallengeToken(token)).toBe(true);
+    expect(consumeChallengeToken(token)).toBe(false);
+  });
+
+  it('consumeChallengeToken should return false after consumption', () => {
+    const token = generateChallengeToken(55);
+    consumeChallengeToken(token);
+    expect(consumeChallengeToken(token)).toBe(false);
   });
 });

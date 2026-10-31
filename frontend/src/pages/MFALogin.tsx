@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
 
 export const MFALogin: React.FC = () => {
-  const { user, mfaEmail, mfaPassword } = useAuth();
+  const { user, mfaEmail, mfaPassword, mfaChallengeToken } = useAuth();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,13 +16,17 @@ export const MFALogin: React.FC = () => {
       setError('Please enter a 6-digit code');
       return;
     }
+    if (!mfaChallengeToken) {
+      setError('MFA challenge expired. Please sign in again.');
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
       const email = mfaEmail || user?.email || '';
       const password = mfaPassword || '';
 
-      const res = await api.challengeMFA({ email, password, code });
+      const res = await api.challengeMFA({ email, password, code, challenge_token: mfaChallengeToken });
       if (res.success) {
         navigate('/', { replace: true });
       }

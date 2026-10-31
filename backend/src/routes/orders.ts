@@ -148,10 +148,6 @@ router.post('/checkout', optionalAuth, validateBody(checkoutSchema), async (req:
           return res.status(400).json({ error: 'Invalid Coupon', message: 'This coupon is for another user' });
         }
 
-        // Verify coupon ownership
-        if (c.user_id && c.user_id !== userId) {
-          return res.status(400).json({ error: 'Invalid Coupon', message: 'This coupon is for another user' });
-        }
 
         if (c.discount_type === 'percentage') {
           discountAmount = Math.round(subtotal * c.discount_value / 100);
@@ -188,61 +184,41 @@ router.post('/checkout', optionalAuth, validateBody(checkoutSchema), async (req:
     const billingAddressJson = JSON.stringify(billing_address || shipping_address);
 
     const orderResult = transaction((db) => {
-      try {
-
-const orderInsert = prepare(`
+      const orderStmt = prepare(`
         INSERT INTO orders (
           order_number, user_id, session_id, email, phone, status, payment_method,
           payment_status, subtotal, delivery_charge, discount_amount, total_amount,
           currency, shipping_address, billing_address, notes, idempotency_key
         ) VALUES (?, ?, ?, ?, ?, 'pending', ?, 'pending', ?, ?, ?, ?, 'PKR', ?, ?, ?, ?)
       `, db);
-
-
-
-      const result = orderInsert.run(
+      const result = orderStmt.run(
         orderNumber, userId || null, sessionId, email, phone, payment_method,
         subtotal, delivery, discount, total,
         shippingAddressJson, billingAddressJson, notes || null, idempotencyKey
       );
-
-
       const orderId = result.lastInsertRowid as number;
 
-      // Insert order items
-      const itemInsert = prepare(`
+      const itemStmt = prepare(`
         INSERT INTO order_items (order_id, product_id, product_sku, product_name, unit_price, quantity, line_total)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, db);
-
       for (const item of cartItems as { product_id: number; sku: string; name: string; price: number; sale_price: number | null; quantity: number }[]) {
         const unitPrice = item.sale_price ?? item.price;
         const lineTotal = unitPrice * item.quantity;
-        itemInsert.run(orderId, item.product_id, item.sku, item.name, unitPrice, item.quantity, lineTotal);
-
-        // Decrease stock
-        qRun('UPDATE products SET stock_quantity = stock_quantity - ?, updated_at = datetime("now") WHERE id = ?', [item.quantity, item.product_id]);
+        itemStmt.run(orderId, item.product_id, item.sku, item.name, unitPrice, item.quantity, lineTotal);
+        prepare('UPDATE products SET stock_quantity = stock_quantity - ?, updated_at = datetime("now") WHERE id = ?', db).run(item.quantity, item.product_id);
       }
 
-      // Record status history
-      qRun('INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)', [orderId, 'pending', 'Order placed']);
-
-      // Record coupon usage
+      prepare('INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)', db).run(orderId, 'pending', 'Order placed');
       if (couponId) {
-        qRun('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = ?', [couponId]);
+        prepare('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = ?', db).run(couponId);
         if (userId) {
-          qRun('INSERT INTO coupon_usage (coupon_id, user_id, order_id) VALUES (?, ?, ?)', [couponId, userId, orderId]);
+          prepare('INSERT INTO coupon_usage (coupon_id, user_id, order_id) VALUES (?, ?, ?)', db).run(couponId, userId, orderId);
         }
       }
-
-      // Clear cart
-      qRun('DELETE FROM cart_items WHERE session_id = ?', [sessionId]);
+      prepare('DELETE FROM cart_items WHERE session_id = ?', db).run(sessionId);
 
       return { orderId, orderNumber };
-      } catch (txError) {
-
-throw txError;
-      }
     });
 
 
@@ -579,14 +555,14 @@ router.post('/:orderNumber/cancel', authRequired, async (req: Request, res: Resp
       return res.status(400).json({ error: 'Bad Request', message: `Cannot cancel order in ${order.status} status` });
     }
 
-    transaction(() => {
-      qRun('UPDATE orders SET status = ?, cancelled_at = datetime("now"), notes = COALESCE(notes, "") || ? WHERE id = ?', ['cancelled', `\nCancelled: ${reason || 'Customer requested'}`, order.id]);
-      qRun('INSERT INTO order_status_history (order_id, status, notes, changed_by) VALUES (?, ?, ?, ?)', [order.id, 'cancelled', reason || 'Customer requested cancellation', session.userId]);
+    transaction((db) => {
+      prepare('UPDATE orders SET status = ?, cancelled_at = datetime("now"), notes = COALESCE(notes, "") || ? WHERE id = ?', db).run('cancelled', `\nCancelled: ${reason || 'Customer requested'}`, order.id);
+      prepare('INSERT INTO order_status_history (order_id, status, notes, changed_by) VALUES (?, ?, ?, ?)', db).run(order.id, 'cancelled', reason || 'Customer requested cancellation', session.userId);
 
       // Restore stock
-      const items = qAll('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [order.id]) as { product_id: number; quantity: number }[];
+      const items = prepare('SELECT product_id, quantity FROM order_items WHERE order_id = ?', db).all(order.id) as { product_id: number; quantity: number }[];
       for (const item of items) {
-        qRun('UPDATE products SET stock_quantity = stock_quantity + ?, updated_at = datetime("now") WHERE id = ?', [item.quantity, item.product_id]);
+        prepare('UPDATE products SET stock_quantity = stock_quantity + ?, updated_at = datetime("now") WHERE id = ?', db).run(item.quantity, item.product_id);
       }
     });
 

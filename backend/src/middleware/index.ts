@@ -42,6 +42,10 @@ export function authRequired(req: Request, res: Response, next: NextFunction): v
     res.status(401).json({ error: 'Unauthorized', message: 'Invalid or expired session' });
     return;
   }
+  if (session.mfaPending) {
+    res.status(401).json({ error: 'Unauthorized', message: 'MFA challenge required' });
+    return;
+  }
 
   (req as any).session = session;
   (req as any).user = session;

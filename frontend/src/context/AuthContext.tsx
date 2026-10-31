@@ -9,13 +9,14 @@ interface AuthContextType {
   mfaRequired: boolean;
   mfaEmail: string;
   mfaPassword: string;
+  mfaChallengeToken: string;
   login: (email: string, password: string) => Promise<void>;
   register: (data: { email: string; password: string; first_name: string; last_name: string; phone?: string }) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: { first_name?: string; last_name?: string; phone?: string }) => Promise<void>;
   refreshUser: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  setMFACredentials: (email: string, password: string) => void;
+  setMFACredentials: (email: string, password: string, challengeToken?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,9 +53,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, [refreshUser]);
 
-  const setMFACredentials = (eml: string, pwd: string) => {
+  const setMFACredentials = (eml: string, pwd: string, challengeToken?: string) => {
     setMfaEmail(eml);
     setMfaPassword(pwd);
+    if (challengeToken) setMfaChallengeToken(challengeToken);
   };
 
   const login = async (email: string, password: string) => {
@@ -63,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setMfaRequired(true);
       setMfaEmail(email);
       setMfaPassword(password);
+      setMfaChallengeToken(res.challenge_token || '');
       return;
     }
     setUser(res.user);
@@ -96,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, mfaRequired, mfaEmail, mfaPassword, login, register, logout, updateProfile, refreshUser, signInWithGoogle, setMFACredentials }}>
+    <AuthContext.Provider value={{ user, loading, mfaRequired, mfaEmail, mfaPassword, mfaChallengeToken, login, register, logout, updateProfile, refreshUser, signInWithGoogle, setMFACredentials }}>
       {children}
     </AuthContext.Provider>
   );

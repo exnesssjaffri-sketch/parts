@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getDb, qGet } from '../db/index.js';
 import { authRequired, validateBody, rateLimit } from '../middleware/index.js';
 import { z } from 'zod';
-import { hashPassword, verifyPassword, createSession, getSession, deleteSession, getUserByEmail, getUserById, createUser, updateUserProfile, changePassword, generateMFASecret, generateMFAQRCodeURI, verifyMFACode, enableMFA, verifyAndEnableMFA, disableMFA, requireMFAForAction } from '../auth/index.js';
+import { hashPassword, verifyPassword, createSession, getSession, deleteSession, getUserByEmail, getUserById, createUser, updateUserProfile, changePassword, generateMFASecret, generateMFAQRCodeURI, verifyMFACode, enableMFA, verifyAndEnableMFA, disableMFA, requireMFAForAction, generateChallengeToken, consumeChallengeToken, consumeChallengeTokenForUser } from '../auth/index.js';
 import { config } from '../config/index.js';
 
 const router = Router();
@@ -99,8 +99,31 @@ router.post('/login', rateLimit, validateBody(loginSchema), async (req: Request,
       return res.status(401).json({ error: 'Unauthorized', message: 'Invalid email or password' });
     }
 
-    const token = createSession(user);
+    // If MFA is enabled, generate a single-use challenge token; otherwise log in directly
+    const mfaEnabled = user.mfa_verified === 1;
+    if (mfaEnabled) {
+      const challengeToken = generateChallengeToken(user.id);
 
+      res.json({
+        success: true,
+        message: 'Password verified, MFA code required',
+        mfa_required: true,
+        challenge_token: challengeToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
+          is_admin: user.is_admin === 1,
+          email_verified: user.email_verified === 1,
+        },
+      });
+      return;
+    }
+
+    // No MFA: create a normal session and log in directly
+    const token = createSession(user);
     res.cookie('session_token', token, {
       httpOnly: true,
       secure: config.env === 'production',
@@ -108,11 +131,10 @@ router.post('/login', rateLimit, validateBody(loginSchema), async (req: Request,
       maxAge: config.security.tokenTtl * 1000,
     });
 
-    const mfaEnabled = user.mfa_verified === 1;
     res.json({
       success: true,
       message: 'Login successful',
-      mfa_required: mfaEnabled,
+      mfa_required: false,
       user: {
         id: user.id,
         email: user.email,
@@ -322,9 +344,9 @@ router.get('/mfa/status', authRequired, async (req: Request, res: Response) => {
 // POST /api/auth/mfa/challenge - Challenge for MFA (during login)
 router.post('/mfa/challenge', rateLimit, async (req: Request, res: Response) => {
   try {
-    const { email, password, code } = req.body;
-    if (!email || !password || !code) {
-      return res.status(400).json({ error: 'Bad Request', message: 'Email, password, and MFA code are required' });
+    const { email, password, code, challenge_token } = req.body;
+    if (!email || !password || !code || !challenge_token) {
+      return res.status(400).json({ error: 'Bad Request', message: 'Email, password, MFA code, and challenge token are required' });
     }
 
     const user = getUserByEmail(email);
@@ -352,12 +374,20 @@ router.post('/mfa/challenge', rateLimit, async (req: Request, res: Response) => 
       });
     }
 
+    // Verify the challenge token: single-use, bound to this user, not expired, not over-attempts
+    const consumed = consumeChallengeTokenForUser(challenge_token, user.id);
+    if (!consumed) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'Invalid, expired, or already used challenge token' });
+    }
+
     if (!verifyMFACode(user.mfa_secret, code)) {
+      // Token already consumed above; return failure without retry
       return res.status(401).json({ error: 'Unauthorized', message: 'Invalid MFA code' });
     }
 
-    const token = createSession(user);
-    res.cookie('session_token', token, {
+    // MFA verified: create final active session
+    const finalToken = createSession(user);
+    res.cookie('session_token', finalToken, {
       httpOnly: true,
       secure: config.env === 'production',
       sameSite: 'lax',
@@ -391,7 +421,9 @@ router.post('/google/callback', rateLimit, async (req: Request, res: Response) =
       return res.status(400).json({ error: 'Bad Request', message: 'Authorization code is required' });
     }
 
-    const response = await fetch('https://dsyjerhfuldpcoshaicl.supabase.co/auth/v1/token?grant_type=authorization_code', {
+    // Hardcoded URL replaced with config
+    const supabaseUrl = config.supabase.url || 'https://dsyjerhfuldpcoshaicl.supabase.co';
+    const tokenResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=authorization_code`, {
       method: 'POST',
       headers: {
         'apikey': config.supabase.anonKey,
@@ -400,12 +432,12 @@ router.post('/google/callback', rateLimit, async (req: Request, res: Response) =
       body: JSON.stringify({ code }),
     });
 
-    const data = await response.json() as any;
+    const data = await tokenResponse.json() as any;
     if (!data.session || !data.session.access_token) {
       return res.status(400).json({ error: 'Bad Request', message: data.error?.message || 'Failed to exchange code' });
     }
 
-    const userResponse = await fetch('https://dsyjerhfuldpcoshaicl.supabase.co/auth/v1/user', {
+    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: {
         'Authorization': `Bearer ${data.session.access_token}`,
         'apikey': config.supabase.anonKey,
@@ -430,6 +462,27 @@ router.post('/google/callback', rateLimit, async (req: Request, res: Response) =
     const sessionUser = getUserByEmail(user.email);
     if (!sessionUser) {
       return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to create session' });
+    }
+
+    // Check MFA status - if enabled, return a single-use challenge token instead of a session
+    const mfaEnabled = sessionUser.mfa_verified === 1;
+    if (mfaEnabled) {
+      const challengeToken = generateChallengeToken(sessionUser.id);
+      return res.json({
+        success: true,
+        message: 'Google sign-in successful',
+        mfa_required: true,
+        challenge_token: challengeToken,
+        user: {
+          id: sessionUser.id,
+          email: sessionUser.email,
+          first_name: sessionUser.first_name,
+          last_name: sessionUser.last_name,
+          phone: sessionUser.phone,
+          is_admin: sessionUser.is_admin === 1,
+          email_verified: sessionUser.email_verified === 1,
+        },
+      });
     }
 
     const sessionToken = createSession(sessionUser);

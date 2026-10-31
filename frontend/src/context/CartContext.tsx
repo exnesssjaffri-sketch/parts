@@ -17,7 +17,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [summary, setSummary] = useState<CartSummary>({ item_count: 0, subtotal: 0, subtotal_formatted: '¥0.00' });
+  const [summary, setSummary] = useState<CartSummary>({ item_count: 0, subtotal: 0, subtotal_formatted: 'Rs. 0' });
   const [loading, setLoading] = useState<boolean>(true);
 
   const refreshCart = useCallback(async () => {
@@ -27,7 +27,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSummary(data.summary);
     } catch {
       setItems([]);
-      setSummary({ item_count: 0, subtotal: 0, subtotal_formatted: '¥0.00' });
+      setSummary({ item_count: 0, subtotal: 0, subtotal_formatted: 'Rs. 0' });
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = async () => {
     await api.clearCart();
     setItems([]);
-    setSummary({ item_count: 0, subtotal: 0, subtotal_formatted: '¥0.00' });
+    setSummary({ item_count: 0, subtotal: 0, subtotal_formatted: 'Rs. 0' });
   };
 
   return (
