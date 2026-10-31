@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0"
-  }
+  },
+  "name": "automarts-frontend",
+  "private": true,
+  "type": "module"
 }

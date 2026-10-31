@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getDb, qGet } from '../db/index.js';
 import { authRequired, validateBody, rateLimit } from '../middleware/index.js';
 import { z } from 'zod';
-import { hashPassword, verifyPassword, createSession, getSession, deleteSession, getUserByEmail, getUserById, createUser, updateUserProfile, changePassword, generateMFASecret, generateMFAQRCodeURI, verifyMFACode, enableMFA, verifyAndEnableMFA, disableMFA, requireMFAForAction, generateChallengeToken, consumeChallengeToken, consumeChallengeTokenForUser } from '../auth/index.js';
+import { hashPassword, verifyPassword, createSession, getSession, deleteSession, getUserByEmail, getUserById, createUser, updateUserProfile, changePassword, generateMFASecret, generateMFAQRCodeURI, verifyMFACode, enableMFA, verifyAndEnableMFA, disableMFA, requireMFAForAction, generateChallengeToken, consumeChallengeToken, consumeChallengeTokenForUser, getChallengeTokenUserId, recordChallengeAttempt } from '../auth/index.js';
 import { config } from '../config/index.js';
 
 const router = Router();
@@ -410,6 +410,63 @@ router.post('/mfa/challenge', rateLimit, async (req: Request, res: Response) => 
   } catch (error) {
     console.error('MFA challenge error:', error);
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to process MFA challenge' });
+  }
+});
+
+
+ // POST /api/auth/mfa/oauth-challenge - Finish MFA after a successful Google OAuth exchange.
+ // User identity is obtained only from the server-side challenge token, never from client input.
+router.post('/mfa/oauth-challenge', rateLimit, async (req: Request, res: Response) => {
+  try {
+    const { code, challenge_token } = req.body;
+    if (typeof challenge_token !== 'string' || !challenge_token || typeof code !== 'string' || !/^\\d{6}$/.test(code)) {
+      return res.status(400).json({ error: 'Bad Request', message: 'A challenge token and 6-digit MFA code are required' });
+    }
+
+    const challengeUserId = getChallengeTokenUserId(challenge_token);
+    if (challengeUserId === null) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'Invalid, expired, or already used challenge token' });
+    }
+
+    const user = getUserById(challengeUserId);
+    if (!user || !user.mfa_secret || user.mfa_verified !== 1) {
+      consumeChallengeTokenForUser(challenge_token, challengeUserId);
+      return res.status(401).json({ error: 'Unauthorized', message: 'MFA is not available for this challenge' });
+    }
+
+    if (!verifyMFACode(user.mfa_secret, code)) {
+      recordChallengeAttempt(challenge_token);
+      return res.status(401).json({ error: 'Unauthorized', message: 'Invalid MFA code' });
+    }
+
+    if (!consumeChallengeTokenForUser(challenge_token, user.id)) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'Invalid, expired, or already used challenge token' });
+    }
+
+    const finalToken = createSession(user);
+    res.cookie('session_token', finalToken, {
+      httpOnly: true,
+      secure: config.env === 'production',
+      sameSite: 'lax',
+      maxAge: config.security.tokenTtl * 1000,
+    });
+
+    return res.json({
+      success: true,
+      message: 'MFA verification successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user.phone,
+        is_admin: user.is_admin === 1,
+        email_verified: user.email_verified === 1,
+      },
+    });
+  } catch (error) {
+    console.error('OAuth MFA challenge error:', error);
+    return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to process OAuth MFA challenge' });
   }
 });
 

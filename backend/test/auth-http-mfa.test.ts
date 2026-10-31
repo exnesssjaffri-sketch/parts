@@ -412,6 +412,37 @@ describe('Auth HTTP Routes - MFA Regression Tests', () => {
     expect(mfaRes.setCookie).toBeFalsy();
   });
 
+  it('13. Google OAuth MFA challenge completes without a password and rejects replay', async () => {
+    oauthEmail = 'oauthmfa-complete@test.com';
+    const user = createUser(oauthEmail, '', 'OAuthMfa', 'Complete');
+    const secret = generateMFASecret();
+    enableVerifiedMFA(user.id, secret);
+
+    const callbackRes = await httpPost('/api/auth/google/callback', { code: 'mock-google-mfa-code' });
+    expect(callbackRes.status).toBe(200);
+    expect(callbackRes.body.mfa_required).toBe(true);
+    expect(callbackRes.setCookie).toBeFalsy();
+
+    const challengeToken = callbackRes.body.challenge_token as string;
+    const completeRes = await httpPost('/api/auth/mfa/oauth-challenge', {
+      challenge_token: challengeToken,
+      code: generateCode(secret),
+    });
+
+    expect(completeRes.status).toBe(200);
+    expect(completeRes.body.success).toBe(true);
+    expect(completeRes.setCookie).toContain('session_token=');
+    const sessionToken = sessionCookieValue(completeRes.setCookie!);
+    expect(getSession(sessionToken)?.userId).toBe(user.id);
+
+    const replayRes = await httpPost('/api/auth/mfa/oauth-challenge', {
+      challenge_token: challengeToken,
+      code: generateCode(secret),
+    });
+    expect(replayRes.status).toBe(401);
+    expect(replayRes.body.message).toContain('Invalid, expired, or already used');
+  });
+
   it('11. Non-MFA user should not be forced through MFA flow', async () => {
     const email = 'nomfauser@test.com';
     const password = 'NoMfaPass123!';

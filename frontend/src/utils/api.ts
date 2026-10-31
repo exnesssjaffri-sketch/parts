@@ -138,6 +138,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  challengeOAuthMFA: (data: { code: string; challenge_token: string }) =>
+    request<{ success: boolean; message: string; user: User }>('/auth/mfa/oauth-challenge', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   logout: () =>
     request<{ success: boolean; message: string }>('/auth/logout', {

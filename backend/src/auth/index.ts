@@ -52,6 +52,29 @@ export function generateChallengeToken(userId: number): string {
   return token;
 }
 
+/** Read the user bound to a live challenge token; never accept identity from the client. */
+export function getChallengeTokenUserId(token: string): number | null {
+  const record = challenges.get(token);
+  if (!record) return null;
+  if (record.expiresAt < Date.now() || record.attempts >= record.maxAttempts) {
+    challenges.delete(token);
+    return null;
+  }
+  return record.userId;
+}
+
+/** Count a failed TOTP attempt and invalidate the challenge at the configured limit. */
+export function recordChallengeAttempt(token: string): boolean {
+  const record = challenges.get(token);
+  if (!record || record.expiresAt < Date.now()) {
+    challenges.delete(token);
+    return false;
+  }
+  record.attempts += 1;
+  if (record.attempts >= record.maxAttempts) challenges.delete(token);
+  return true;
+}
+
 export function consumeChallengeToken(token: string): boolean {
   const record = challenges.get(token);
   if (!record) return false;
