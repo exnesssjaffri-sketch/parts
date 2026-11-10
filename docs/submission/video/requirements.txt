@@ -1,0 +1,13 @@
+# AutoMarts 4K Voiceover Showcase - Video Pipeline Python Dependencies
+
+# Environment variable loading
+python-dotenv>=1.0.0
+
+# HTTP client for TTS API
+httpx>=0.27.0
+
+# Async support
+asyncio-throttle>=1.0.0
+
+# Type hints
+typing-extensions>=4.12.0

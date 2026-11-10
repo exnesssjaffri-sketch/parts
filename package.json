@@ -9,7 +9,7 @@
     "dev:frontend": "vite --host",
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "tsc -p backend/tsconfig.json",
-    "build:frontend": "vite build",
+    "build:frontend": "cd frontend && vite build",
     "preview": "vite preview",
     "db:init": "tsx backend/src/db/init.ts",
     "db:seed": "tsx backend/src/db/seed.ts",
