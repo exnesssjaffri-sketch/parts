@@ -1,6 +1,6 @@
 # AutoMarts 4K Showcase - Voiceover Script
 
-**Total Duration: 76 seconds**  
+**Total Duration: 76 seconds**
 **10 scenes matching clip30_*.mp4 sequence**
 
 ---
