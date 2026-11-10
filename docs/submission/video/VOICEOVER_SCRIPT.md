@@ -1,6 +1,6 @@
 # AutoMarts 4K Showcase - Voiceover Script
 
-**Total Duration: 76 seconds**  
+**Total Duration: 76 seconds**
 **10 scenes matching clip30_*.mp4 sequence**
 
 ---
@@ -15,14 +15,14 @@
 ## Scene 2: Hero (8 seconds)
 **Clip:** `clip30_hero.mp4` | **Frames:** 240 | **Words:** ~24
 
-> AutoMarts delivers a modern auto parts shopping experience with over twenty-two thousand genuine components, competitive pricing, and nationwide delivery.
+> AutoMarts delivers a modern auto parts shopping experience with genuine components, competitive pricing, and delivery across Pakistan.
 
 ---
 
 ## Scene 3: Products (8 seconds)
 **Clip:** `clip30_products.mp4` | **Frames:** 240 | **Words:** ~24
 
-> Browse our catalog of twenty-two thousand plus parts — from filters and lubricants to batteries and brake components — all sourced from authorized distributors.
+> Browse our catalog of genuine parts — from filters and lubricants to batteries and brake components — all sourced from authorized distributors.
 
 ---
 
@@ -36,7 +36,7 @@
 ## Scene 5: Cart & Checkout (8 seconds)
 **Clip:** `clip30_cart.mp4` | **Frames:** 240 | **Words:** ~24
 
-> Add parts to your cart and check out seamlessly — saved vehicles, one-click reorder, guest checkout, and real-time inventory ensure a frictionless purchase every time.
+> Add parts to your cart and check out seamlessly — guest checkout, real-time inventory, and secure payments ensure a frictionless purchase every time.
 
 ---
 
@@ -57,21 +57,21 @@
 ## Scene 8: Security (8 seconds)
 **Clip:** `clip30_security.mp4` | **Frames:** 240 | **Words:** ~24
 
-> Enterprise-grade security underpins everything: row-level policies, encrypted data at rest, audit logging, rate limiting, and SOC-2 aligned practices protect every transaction.
+> Enterprise-grade security underpins everything: row-level policies, encrypted data at rest, audit logging, and rate limiting protect every transaction.
 
 ---
 
 ## Scene 9: Tech Stack (8 seconds)
 **Clip:** `clip30_stack.mp4` | **Frames:** 240 | **Words:** ~24
 
-> Built on a modern stack — Next.js fourteen, React eighteen, Supabase Postgres, TypeScript, Tailwind CSS, and a comprehensive test suite — ready for production scale.
+> Built on a modern stack — Vite, React eighteen, Supabase Postgres, TypeScript, Tailwind CSS, and a comprehensive test suite — ready for production scale.
 
 ---
 
 ## Scene 10: Outro (6 seconds)
 **Clip:** `clip30_outro.mp4` | **Frames:** 180 | **Words:** ~18
 
-> AutoMarts — genuine parts, real confidence. Visit automarts dot dev to start your order today.
+> AutoMarts — genuine parts, real confidence. Start your order at AutoMarts today.
 
 ---
 
@@ -83,9 +83,9 @@
 
 ## Timing Notes
 - Each scene's word count targets ~150 words/minute speaking pace
-- Total script: ~228 words → ~91 seconds at 150 wpm
+- Total script: ~205 words → ~82 seconds at 150 wpm
 - Slight compression needed to fit 76s video; natural pauses at scene boundaries will absorb the difference
-- FFmpeg `atempo` filter can adjust to 1.2x if needed during mix
+- FFmpeg `atempo` filter can adjust to 1.1x if needed during mix
 
 ## File Naming
 Output audio files: `voiceover_01_intro.wav` through `voiceover_10_outro.wav`

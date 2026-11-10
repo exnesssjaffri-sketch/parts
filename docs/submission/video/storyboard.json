@@ -1,0 +1,132 @@
+{
+  "project": "AutoMarts 4K Showcase Video",
+  "description": "Professional product showcase video for the AutoMarts auto parts e-commerce platform",
+  "specifications": {
+    "resolution": "3840x2160 (4K UHD)",
+    "fps": 30,
+    "codec_video": "H.264 (libx264)",
+    "codec_audio": "N/A (no audio track)",
+    "crf": 20,
+    "profile": "High",
+    "level": "5.1",
+    "pix_fmt": "yuv420p",
+    "duration_seconds": 76,
+    "file_size_mb": 0.75
+  },
+  "brand_colors": {
+    "automotive_red": "#c53030",
+    "charcoal": "#1c1917",
+    "white": "#ffffff"
+  },
+  "scenes": [
+    {
+      "index": 1,
+      "name": "intro",
+      "title": "AutoMarts",
+      "subtitle": "Auto Parts E-Commerce Platform",
+      "duration": 6,
+      "timestamp": "00:00-00:06",
+      "type": "title_card"
+    },
+    {
+      "index": 2,
+      "name": "hero",
+      "title": "Modern Auto Parts Store",
+      "subtitle": "Premium components for Toyota, Honda, Suzuki",
+      "duration": 8,
+      "timestamp": "00:06-00:14",
+      "type": "value_proposition"
+    },
+    {
+      "index": 3,
+      "name": "products",
+      "title": "22+ Genuine Parts",
+      "subtitle": "Engine, Brakes, Suspension, Electrical & More",
+      "duration": 8,
+      "timestamp": "00:14-00:22",
+      "type": "catalog_showcase"
+    },
+    {
+      "index": 4,
+      "name": "categories",
+      "title": "Complete Categories",
+      "subtitle": "Filters, Oils, Batteries, Body Parts",
+      "duration": 8,
+      "timestamp": "00:22-00:30",
+      "type": "category_overview"
+    },
+    {
+      "index": 5,
+      "name": "cart",
+      "title": "Seamless Checkout",
+      "subtitle": "Secure cart with coupon & discount support",
+      "duration": 8,
+      "timestamp": "00:30-00:38",
+      "type": "checkout_flow"
+    },
+    {
+      "index": 6,
+      "name": "auth",
+      "title": "MFA Authentication",
+      "subtitle": "TOTP-based security with Google OAuth",
+      "duration": 8,
+      "timestamp": "00:38-00:46",
+      "type": "security_feature"
+    },
+    {
+      "index": 7,
+      "name": "admin",
+      "title": "Admin Dashboard",
+      "subtitle": "Complete inventory & order management",
+      "duration": 8,
+      "timestamp": "00:46-00:54",
+      "type": "admin_panel"
+    },
+    {
+      "index": 8,
+      "name": "security",
+      "title": "Enterprise Security",
+      "subtitle": "Zod validation, Rate limiting, Audit logs",
+      "duration": 8,
+      "timestamp": "00:54-00:62",
+      "type": "security_features"
+    },
+    {
+      "index": 9,
+      "name": "stack",
+      "title": "Tech Stack",
+      "subtitle": "Express + React + sql.js + Supabase",
+      "duration": 8,
+      "timestamp": "00:62-01:10",
+      "type": "technology_showcase"
+    },
+    {
+      "index": 10,
+      "name": "outro",
+      "title": "Thank You",
+      "subtitle": "Built with love using modern web technologies",
+      "duration": 6,
+      "timestamp": "01:10-01:16",
+      "type": "closing_card"
+    }
+  ],
+  "production_details": {
+    "tools_used": [
+      "FFmpeg 9.0.2 (libavformat, libavcodec, libavfilter)",
+      "Python 3.13 with Pillow (PIL) for frame generation",
+      "React 18 + Vite dev server for live app preview"
+    ],
+    "frame_generation": "PIL (Python Imaging Library) with TrueType fonts",
+    "video_encoding": "FFmpeg H.264 with CRF 20 (high quality)",
+    "rendering": "Static frames with minimal animation",
+    "assembly": "FFmpeg concat demuxer"
+  },
+  "quality_checks": {
+    "resolution_verified": "3840x2160",
+    "fps_verified": "30",
+    "codec_verified": "H.264 High Profile",
+    "duration_verified": "76 seconds",
+    "black_frames": "None detected",
+    "audio_tracks": "None (video-only presentation)"
+  }
+}

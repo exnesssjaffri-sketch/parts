@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build:frontend",
+  "installCommand": "npm ci && npm --prefix frontend ci",
+  "outputDirectory": "frontend/dist",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
