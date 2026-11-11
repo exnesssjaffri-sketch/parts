@@ -1,0 +1,7 @@
+file 'C:\Users\ALI HAIDER\OneDrive\Desktop\parts\.claude\worktrees\jovial-lalande-90b24f\docs\submission\video\assets\temp\homepage_processed.mp4'
+file 'C:\Users\ALI HAIDER\OneDrive\Desktop\parts\.claude\worktrees\jovial-lalande-90b24f\docs\submission\video\assets\temp\products_processed.mp4'
+file 'C:\Users\ALI HAIDER\OneDrive\Desktop\parts\.claude\worktrees\jovial-lalande-90b24f\docs\submission\video\assets\temp\categories_processed.mp4'
+file 'C:\Users\ALI HAIDER\OneDrive\Desktop\parts\.claude\worktrees\jovial-lalande-90b24f\docs\submission\video\assets\temp\cart_checkout_processed.mp4'
+file 'C:\Users\ALI HAIDER\OneDrive\Desktop\parts\.claude\worktrees\jovial-lalande-90b24f\docs\submission\video\assets\temp\auth_mfa_processed.mp4'
+file 'C:\Users\ALI HAIDER\OneDrive\Desktop\parts\.claude\worktrees\jovial-lalande-90b24f\docs\submission\video\assets\temp\admin_processed.mp4'
+file 'C:\Users\ALI HAIDER\OneDrive\Desktop\parts\.claude\worktrees\jovial-lalande-90b24f\docs\submission\video\assets\temp\outro_processed.mp4'

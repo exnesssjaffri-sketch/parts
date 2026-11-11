@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
 import { CartItem } from '../types';
-import { Trash2, Checkout } from 'lucide-react';
+import { Trash2, ShoppingCart } from 'lucide-react';
 
 export const Cart: React.FC = () => {
   const { items, summary, loading, removeItem, updateQuantity, clearCart, refreshCart } = useCart();

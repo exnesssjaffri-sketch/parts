@@ -1,0 +1,53 @@
+{
+  "scenes": [
+    {
+      "id": "homepage",
+      "clip": "homepage_raw.webm",
+      "duration": 10,
+      "script": "Welcome to AutoMarts — Pakistan's premier destination for premium automotive parts. From engine components to performance upgrades, we've curated over ten thousand genuine parts from trusted global brands. Our intelligent search finds exactly what your vehicle needs in seconds."
+    },
+    {
+      "id": "products",
+      "clip": "products_raw.webm",
+      "duration": 10,
+      "script": "Browse our extensive catalog with powerful filters — by category, brand, vehicle make, or price range. Every product page shows detailed specifications, high-resolution imagery, and real-time stock availability. Featured and new arrival badges help you discover the latest performance parts."
+    },
+    {
+      "id": "categories",
+      "clip": "categories_raw.webm",
+      "duration": 12,
+      "script": "Navigate effortlessly through our organized category tree — from braking systems and suspension to electronics and accessories. Each category page showcases top-rated products, brand collections, and compatible vehicle fitment guides. Find the right part for your exact make, model, and year."
+    },
+    {
+      "id": "cart_checkout",
+      "clip": "cart_checkout_raw.webm",
+      "duration": 12,
+      "script": "Add items to your cart with a single click. Review quantities, apply coupon codes, and see transparent pricing with free delivery on orders over five thousand rupees. Our secure checkout supports multiple payment methods — credit card, bank transfer, and cash on delivery across Pakistan."
+    },
+    {
+      "id": "auth_mfa",
+      "clip": "auth_mfa_raw.webm",
+      "duration": 14,
+      "script": "Security is paramount. AutoMarts implements enterprise-grade authentication with OTP-based login and optional TOTP multi-factor authentication. Scan the QR code with Google Authenticator or Authy to add a second layer of protection. Social login via Google OAuth makes access seamless while keeping your account secure."
+    },
+    {
+      "id": "admin",
+      "clip": "admin_raw.webm",
+      "duration": 14,
+      "script": "For store operators, our admin dashboard provides real-time insights — revenue trends, order pipelines, inventory alerts, and top-selling products. Manage catalog, process orders, configure coupons, and monitor customer activity all from a single, responsive interface built for efficiency."
+    },
+    {
+      "id": "outro",
+      "clip": "outro_raw.webm",
+      "duration": 11,
+      "script": "AutoMarts — where quality meets performance. Genuine parts, expert support, nationwide delivery. Visit automarts.pk today and experience the future of automotive e-commerce. Drive with confidence. AutoMarts."
+    }
+  ],
+  "total_duration": 83,
+  "output": {
+    "resolution": "3840x2160",
+    "fps": 30,
+    "codec": "H.264",
+    "format": "MP4"
+  }
+}
