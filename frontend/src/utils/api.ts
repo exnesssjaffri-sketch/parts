@@ -37,30 +37,29 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   // Products
   getProducts: (params?: Record<string, string>) =>
-    request<Product[]>('/products', {
-      signal: params ? undefined : undefined,
-    }).then(products => products),
+    request<{ products: Product[] }>(params ? `/products?${new URLSearchParams(params).toString()}` : '/products')
+      .then(res => res.products),
 
   getProduct: (slug: string) =>
     request<ProductDetail>(`/products/${slug}`),
 
   getFeaturedProducts: () =>
-    request<Product[]>('/products/featured'),
+    request<{ products: Product[] }>('/products/featured').then(res => res.products),
 
   getNewArrivals: () =>
-    request<Product[]>('/products/new-arrivals'),
+    request<{ products: Product[] }>('/products/new-arrivals').then(res => res.products),
 
   getCategories: () =>
-    request<Category[]>('/products/categories'),
+    request<{ categories: Category[] }>('/products/categories').then(res => res.categories),
 
   getBrands: () =>
-    request<Brand[]>('/products/brands'),
+    request<{ brands: Brand[] }>('/products/brands').then(res => res.brands),
 
   searchSuggestions: (query: string) =>
     request<string[]>(`/products/search/suggestions?q=${encodeURIComponent(query)}`),
 
   getRelatedProducts: (slug: string) =>
-    request<Product[]>(`/products/${slug}/related`),
+    request<{ products: Product[] }>(`/products/${slug}/related`).then(res => res.products),
 
   // Vehicle
   getVehicleMakes: () =>
@@ -73,7 +72,7 @@ export const api = {
     request<{ variants: VehicleVariant[] }>(`/products/vehicles/variants?model=${modelSlug}`),
 
   getCompatibleProducts: (variantId: number) =>
-    request<Product[]>(`/products/vehicles/compatible-products?variant_id=${variantId}`),
+    request<{ products: Product[] }>(`/products/vehicles/compatible-products?variant_id=${variantId}`).then(res => res.products),
 
   // Cart
   getCart: () =>

@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { api } from '../utils/api';
-import { ProductDetail, Specification, Compatibility, Product } from '../types';
-import { Image as LucideImage, Star, Share2, ShoppingCart, X } from 'lucide-react';
+import { ProductDetail as ProductDetailType, Product } from '../types';
+import { ShoppingCart, X } from 'lucide-react';
+import { ProductCard } from '../components/ProductCard';
 
 export const ProductDetail: React.FC = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [product, setProduct] = useState<ProductDetailType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'specs' | 'compatibility' | 'related'>('details');
@@ -266,7 +267,7 @@ export const ProductDetail: React.FC = () => {
                           </p>
                           {comp.engine && (
                             <p className="text-sm text-charcoal-500">
-                              {comp.engine} • {comp.transmission || ''} • {comp.fuel_type || ''}
+                              {comp.engine}
                             </p>
                           )}
                         </div>
